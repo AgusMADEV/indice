@@ -52,30 +52,46 @@
       background: var(--primary); border: none; border-radius: 50%;
       box-shadow: 0 4px 12px var(--shadow);
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: background 0.3s, transform 0.2s;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
       z-index: 1000;
     }
     #fab:hover { background: #1558b0; transform: translateY(-2px); }
     #fab:active { transform: translateY(0); }
+    #fab.active { transform: rotate(45deg) scale(1.05); }
     #fab svg { width: 1.75rem; height: 1.75rem; fill: #fff; }
 
     #options-panel {
       position: fixed; bottom: 5.5rem; right: 1.5rem;
       background: var(--bg); border-radius: 0.75rem;
       box-shadow: 0 6px 18px var(--shadow);
-      padding: 1rem; display: none; min-width: 10rem; z-index: 999;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+      min-width: 10rem;
+      z-index: 999;
+    }
+    #options-panel.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
     }
     #options-panel button {
       width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;
       font-size: 0.95rem; font-weight: 500;
       color: var(--text); background: var(--primary-light);
       border: none; border-radius: 0.5rem; cursor: pointer;
-      transition: background 0.2s; display: flex;
+      transition: background 0.2s, transform 0.2s;
+      display: flex;
       align-items: center; justify-content: center;
     }
     #options-panel button:last-child { margin-bottom: 0; }
     #options-panel button:hover {
-      background: var(--primary); color: #fff;
+      background: var(--primary);
+      color: #fff;
+      transform: scale(1.02);
     }
     #options-panel button span {
       margin-right: 0.5rem; font-size: 1.1rem;
@@ -106,7 +122,6 @@
       li.setAttribute('contenteditable','true');
       li.setAttribute('data-placeholder','true');
       li.textContent = placeholderText;
-      // Al enfocar, borrar placeholder
       li.addEventListener('focus', () => {
         if (li.hasAttribute('data-placeholder')) {
           li.textContent = '';
@@ -127,10 +142,12 @@
         }
       }
     });
-    // Toggle panel
-    document.getElementById('fab').addEventListener('click', () => {
-      const panel = document.getElementById('options-panel');
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    // Toggle panel con animación
+    const fab = document.getElementById('fab');
+    const panel = document.getElementById('options-panel');
+    fab.addEventListener('click', () => {
+      panel.classList.toggle('open');
+      fab.classList.toggle('active');
     });
     // Guardar
     document.getElementById('save-btn').addEventListener('click', () => {
@@ -171,7 +188,6 @@
             li.textContent = i;
             ul.appendChild(li);
           });
-          // Añadir placeholder tras cargar
           createPlaceholder();
         })
         .catch(console.error);
