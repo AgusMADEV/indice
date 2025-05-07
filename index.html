@@ -1,74 +1,189 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <style>
-      * {
-        outline: none;
-      }
-      body,
-      html {
-        font-family: sans-serif;
-        padding: 3px;
-        margin: 0;
-      }
-      h1,
-      ul,
-      li {
-        padding: 0;
-        margin: 0;
-      }
-      ul {
-        list-style-type: none;
-      }
-      /* Apply transition for smooth fade effects */
-      li {
-        padding: 10px;
-        border-radius: 10px;
-        transition: background-color 0.5s ease, color 0.5s ease;
-      }
-      /* Active state styling */
-      li.active {
-        background: black;
-        color: white;
-      }
-    </style>
-  </head>
-  <body>
-    <h1 contenteditable> </h1>
-    <ul contenteditable>
-      <li>.</li>
-    </ul>
-    <script>
-      // Listen for selection changes in the document
-      document.addEventListener('selectionchange', function () {
-        const selection = window.getSelection();
-        if (!selection.rangeCount) return;
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Índice Profesional</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --primary-light: #e8f0fe;
+      --text: #202124;
+      --bg: #ffffff;
+      --muted: #5f6368;
+      --shadow: rgba(60,64,67,0.3);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 1rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background: var(--primary-light);
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 1.75rem; font-weight: 600;
+      margin-bottom: 1rem; outline: none;
+    }
+    ul { list-style: none; margin: 0; padding: 0; }
+    li {
+      position: relative;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      border: 1px solid var(--muted);
+      border-radius: 0.5rem;
+      background: var(--bg);
+      transition: border-color 0.3s, box-shadow 0.3s;
+      cursor: text;
+      outline: none;
+    }
+    li:hover { box-shadow: 0 2px 6px var(--shadow); }
+    li:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    li[data-placeholder] { color: var(--muted); }
 
-        const range = selection.getRangeAt(0);
-        let currentNode = range.startContainer;
+    #fab {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      width: 3.5rem; height: 3.5rem;
+      background: var(--primary); border: none; border-radius: 50%;
+      box-shadow: 0 4px 12px var(--shadow);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.3s, transform 0.2s;
+      z-index: 1000;
+    }
+    #fab:hover { background: #1558b0; transform: translateY(-2px); }
+    #fab:active { transform: translateY(0); }
+    #fab svg { width: 1.75rem; height: 1.75rem; fill: #fff; }
 
-        // If the selection starts in a text node, work with its parent element
-        if (currentNode.nodeType === Node.TEXT_NODE) {
-          currentNode = currentNode.parentNode;
-        }
+    #options-panel {
+      position: fixed; bottom: 5.5rem; right: 1.5rem;
+      background: var(--bg); border-radius: 0.75rem;
+      box-shadow: 0 6px 18px var(--shadow);
+      padding: 1rem; display: none; min-width: 10rem; z-index: 999;
+    }
+    #options-panel button {
+      width: 100%; padding: 0.5rem; margin-bottom: 0.5rem;
+      font-size: 0.95rem; font-weight: 500;
+      color: var(--text); background: var(--primary-light);
+      border: none; border-radius: 0.5rem; cursor: pointer;
+      transition: background 0.2s; display: flex;
+      align-items: center; justify-content: center;
+    }
+    #options-panel button:last-child { margin-bottom: 0; }
+    #options-panel button:hover {
+      background: var(--primary); color: #fff;
+    }
+    #options-panel button span {
+      margin-right: 0.5rem; font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1 contenteditable placeholder="Título de tu lista…"></h1>
+  <ul></ul>
 
-        // Traverse up the DOM tree until we find an <li> (or reach the document root)
-        let li = currentNode;
-        while (li && li.nodeName !== 'LI') {
-          li = li.parentElement;
-        }
+  <button id="fab" aria-label="Opciones">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-8h14V7H7v2z"/>
+    </svg>
+  </button>
 
-        // Remove the "active" class from all <li> elements
-        document.querySelectorAll('li').forEach(function (item) {
-          item.classList.remove('active');
-        });
+  <div id="options-panel">
+    <button id="save-btn"><span>💾</span>Guardar lista</button>
+    <button id="load-btn"><span>📁</span>Cargar lista</button>
+  </div>
 
-        // If an <li> is found, add the "active" class
-        if (li) {
-          li.classList.add('active');
+  <script>
+    const placeholderText = 'Pulsa aquí para editar un ítem';
+    const ul = document.querySelector('ul');
+    // Función para crear placeholder
+    function createPlaceholder() {
+      const li = document.createElement('li');
+      li.setAttribute('contenteditable','true');
+      li.setAttribute('data-placeholder','true');
+      li.textContent = placeholderText;
+      // Al enfocar, borrar placeholder
+      li.addEventListener('focus', () => {
+        if (li.hasAttribute('data-placeholder')) {
+          li.textContent = '';
+          li.removeAttribute('data-placeholder');
         }
       });
-    </script>
-  </body>
+      ul.appendChild(li);
+    }
+    // Inicial
+    createPlaceholder();
+    // Al enfocar cualquier li, si es distinto a placeholder, crear nuevo placeholder al final
+    ul.addEventListener('focusin', (e) => {
+      const li = e.target.closest('li');
+      if (li && !li.hasAttribute('data-placeholder')) {
+        const lastLi = ul.lastElementChild;
+        if (!lastLi || !lastLi.hasAttribute('data-placeholder')) {
+          createPlaceholder();
+        }
+      }
+    });
+    // Toggle panel
+    document.getElementById('fab').addEventListener('click', () => {
+      const panel = document.getElementById('options-panel');
+      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    });
+    // Guardar
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const name = prompt('Nombre de la lista:');
+      if (name) saveList(name);
+    });
+    // Cargar
+    document.getElementById('load-btn').addEventListener('click', () => {
+      fetch('load_lists.php')
+        .then(r => r.json())
+        .then(data => {
+          const sel = prompt(`Listas disponibles:\n${data.lists.join('\n')}`);
+          if (sel) loadList(sel);
+        })
+        .catch(console.error);
+    });
+    // saveList
+    function saveList(name) {
+      const items = Array.from(ul.querySelectorAll('li')).map(li => li.textContent);
+      fetch('save_list.php', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ name, items })
+      })
+      .then(r=>r.json())
+      .then(()=> alert('¡Guardado!'))
+      .catch(console.error);
+    }
+    // loadList
+    function loadList(name) {
+      fetch(`load_list.php?name=${encodeURIComponent(name)}`)
+        .then(r=>r.json())
+        .then(data => {
+          ul.innerHTML = '';
+          data.items.forEach(i => {
+            const li = document.createElement('li');
+            li.setAttribute('contenteditable','true');
+            li.textContent = i;
+            ul.appendChild(li);
+          });
+          // Añadir placeholder tras cargar
+          createPlaceholder();
+        })
+        .catch(console.error);
+    }
+    // Resaltar activo
+    document.addEventListener('selectionchange', () => {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      let node = sel.getRangeAt(0).startContainer;
+      if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+      document.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+      const activeLi = node.closest('li');
+      if (activeLi) activeLi.classList.add('active');
+    });
+  </script>
+</body>
 </html>
