@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      * {
+        outline: none;
+      }
+      body,
+      html {
+        font-family: sans-serif;
+        padding: 3px;
+        margin: 0;
+      }
+      h1,
+      ul,
+      li {
+        padding: 0;
+        margin: 0;
+      }
+      ul {
+        list-style-type: none;
+      }
+      /* Apply transition for smooth fade effects */
+      li {
+        padding: 10px;
+        border-radius: 10px;
+        transition: background-color 0.5s ease, color 0.5s ease;
+      }
+      /* Active state styling */
+      li.active {
+        background: black;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 contenteditable> </h1>
+    <ul contenteditable>
+      <li>.</li>
+    </ul>
+    <script>
+      // Listen for selection changes in the document
+      document.addEventListener('selectionchange', function () {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        let currentNode = range.startContainer;
+
+        // If the selection starts in a text node, work with its parent element
+        if (currentNode.nodeType === Node.TEXT_NODE) {
+          currentNode = currentNode.parentNode;
+        }
+
+        // Traverse up the DOM tree until we find an <li> (or reach the document root)
+        let li = currentNode;
+        while (li && li.nodeName !== 'LI') {
+          li = li.parentElement;
+        }
+
+        // Remove the "active" class from all <li> elements
+        document.querySelectorAll('li').forEach(function (item) {
+          item.classList.remove('active');
+        });
+
+        // If an <li> is found, add the "active" class
+        if (li) {
+          li.classList.add('active');
+        }
+      });
+    </script>
+  </body>
+</html>
